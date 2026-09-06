@@ -1,0 +1,413 @@
+<title>Rock Era Wars</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0d0d;
+    --surface: #1a1a19;
+    --surface-2: #141413;
+    --border: rgba(255,255,255,0.10);
+    --border-strong: rgba(255,255,255,0.18);
+    --ink: #ffffff;
+    --ink-2: #c3c2b7;
+    --ink-3: #898781;
+    --ink-4: #5c5b58;
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --accent: #e66767;
+    --accent-ink: #1a1006;
+    --tier-top: #3987e5;
+    --tier-mid: #d95926;
+    --tier-low: #199e70;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+  }
+
+  .mono { font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace; }
+
+  .wrap {
+    max-width: 1280px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  .header { padding: 32px 28px 0 28px; }
+  .eyebrow {
+    font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--accent); margin: 0 0 12px 0;
+  }
+  h1 {
+    font-size: clamp(28px, 4.4vw, 42px);
+    line-height: 1.04;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin: 0 0 10px 0;
+    text-wrap: balance;
+  }
+  .sub {
+    font-size: 14.5px;
+    color: var(--ink-2);
+    margin: 0 0 20px 0;
+    max-width: 620px;
+    line-height: 1.5;
+  }
+
+  .controls {
+    padding: 0 28px 14px 28px;
+    display: flex; flex-wrap: wrap; gap: 16px;
+    align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+  .chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip, .seg {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px; letter-spacing: 0.03em; text-transform: uppercase;
+    padding: 7px 14px; border: 1px solid var(--border-strong);
+    background: transparent; color: var(--ink-2);
+    cursor: pointer; font-weight: 500;
+  }
+  .chip { border-radius: 999px; }
+  .seg { border-radius: 8px; }
+  .chip:focus-visible, .seg:focus-visible, .icon-btn:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 2px;
+  }
+  .chip[data-active="true"] {
+    background: var(--accent); color: var(--accent-ink);
+    border-color: var(--accent); font-weight: 600;
+  }
+  .seg[data-active="true"] {
+    background: #ffffff; color: #0d0d0d; border-color: #ffffff; font-weight: 600;
+  }
+  .sort-label {
+    font-size: 11px; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.08em;
+  }
+
+  .era-heading {
+    padding: 16px 28px 0 28px;
+    font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent);
+  }
+  .tiles { padding: 8px 28px 4px 28px; display: flex; flex-wrap: wrap; gap: 12px; }
+  .tile { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 18px; min-width: 148px; }
+  .tile .value { font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .tile .value.name { font-size: 16px; font-weight: 700; font-family: 'Space Grotesk', sans-serif; }
+  .tile .label { font-size: 11px; color: var(--ink-3); text-transform: uppercase; margin-top: 2px; }
+
+  .report {
+    padding: 4px 28px 10px 28px;
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  }
+  .report .sort-label { flex: 0 0 auto; }
+  .report .chip { background: transparent; }
+
+  .inspector {
+    margin: 0 28px 12px 28px; padding: 12px 16px;
+    background: var(--surface); border: 1px solid var(--border-strong); border-radius: 10px;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    flex-wrap: wrap;
+  }
+  .inspector .info { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .inspector .rank { color: var(--accent); font-size: 13px; }
+  .inspector .name { font-weight: 700; font-size: 16px; }
+  .inspector .years { color: var(--ink-3); font-size: 12px; }
+  .icon-btn { background: none; border: none; cursor: pointer; padding: 4px; color: var(--ink-3); line-height: 0; }
+  .icon-btn:hover { color: var(--ink); }
+
+  .chart-scroll {
+    flex: 1 1 auto; overflow: auto; padding: 0 28px 24px 28px;
+  }
+  .chart-scroll::-webkit-scrollbar { height: 10px; width: 10px; }
+  .chart-scroll::-webkit-scrollbar-track { background: var(--surface-2); }
+  .chart-scroll::-webkit-scrollbar-thumb { background: #3a3a38; border-radius: 6px; }
+
+  .chart-inner { min-width: 1192px; }
+
+  .axis-row {
+    position: sticky; top: 0; z-index: 5; background: var(--bg);
+    display: flex; align-items: flex-end; gap: 12px; height: 26px;
+    padding-bottom: 6px; border-bottom: 1px solid var(--axis); margin-bottom: 4px;
+  }
+  .axis-label {
+    width: 200px; flex: 0 0 200px; color: var(--ink-3);
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .axis-ticks { position: relative; flex: 1 1 auto; height: 14px; }
+  .tick { position: absolute; bottom: 0; transform: translateX(-2px); font-size: 11px; color: var(--ink-3); }
+  .today-line { position: absolute; right: 0; top: -14px; bottom: 0; border-right: 1px dashed var(--accent); }
+  .today-label { position: absolute; top: -14px; right: 2px; font-size: 10px; color: var(--accent); white-space: nowrap; }
+
+  .row {
+    display: flex; align-items: center; height: 26px; gap: 12px; cursor: pointer;
+  }
+  .row:hover { background: rgba(255,255,255,0.035); border-radius: 4px; }
+  .row .name-cell {
+    width: 200px; flex: 0 0 200px; overflow: hidden; white-space: nowrap;
+    text-overflow: ellipsis; font-size: 13px;
+  }
+  .track {
+    position: relative; flex: 1 1 auto; height: 16px; border-radius: 2px;
+    background-image: repeating-linear-gradient(to right, transparent 0 127.947px, var(--grid) 127.947px 128.947px);
+  }
+  .piece { position: absolute; top: 0; bottom: 0; border-radius: 3px; }
+
+  .legend {
+    padding: 14px 28px; border-top: 1px solid var(--border);
+    display: flex; flex-wrap: wrap; gap: 18px; align-items: center;
+  }
+  .legend-item { display: flex; gap: 6px; align-items: center; }
+  .swatch { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+  .legend-item span.mono { font-size: 11px; color: var(--ink-3); }
+  .source { font-size: 11px; color: var(--ink-4); margin-left: auto; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .piece, .row, .chip, .seg { transition: opacity .22s ease, background-color .18s ease, filter .15s ease, box-shadow .18s ease; }
+  }
+
+  @media (max-width: 640px) {
+    .source { margin-left: 0; }
+  }
+</style>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<div class="wrap">
+  <div class="header">
+    <p class="eyebrow">Interactive &middot; Billboard's 50 Greatest Rock Bands</p>
+    <h1>Which era actually wins?</h1>
+    <p class="sub">Every band plotted by the years it was really active. Pick a decade to spotlight it, click a bar for the receipts, then go start the argument.</p>
+  </div>
+
+  <div class="controls">
+    <div class="chip-row" id="decade-chips"></div>
+    <div style="display:flex; gap:8px; align-items:center;">
+      <span class="sort-label">Sort</span>
+      <button class="seg" data-action="sort" data-value="rank">By rank</button>
+      <button class="seg" data-action="sort" data-value="debut">By debut</button>
+    </div>
+  </div>
+
+  <p class="era-heading" id="era-heading"></p>
+  <div class="tiles" id="stat-tiles"></div>
+  <div class="report" id="report-row"></div>
+  <div id="inspector-slot"></div>
+
+  <div class="chart-scroll">
+    <div class="chart-inner">
+      <div class="axis-row">
+        <div class="axis-label">Band</div>
+        <div class="axis-ticks" id="axis-ticks">
+          <div class="today-line"><span class="today-label">TODAY</span></div>
+        </div>
+      </div>
+      <div id="rows"></div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <div class="legend-item"><span class="swatch" style="background:var(--tier-top)"></span><span class="mono">Top 10</span></div>
+    <div class="legend-item"><span class="swatch" style="background:var(--tier-mid)"></span><span class="mono">11&ndash;25</span></div>
+    <div class="legend-item"><span class="swatch" style="background:var(--tier-low)"></span><span class="mono">26&ndash;50</span></div>
+    <div class="legend-item" id="era-legend-item" hidden><span class="swatch" style="background:var(--accent)"></span><span class="mono">Active this era</span></div>
+    <span class="source mono">Source: Billboard, &ldquo;The 50 Best Rock Bands&rdquo; (Nov 2025) &middot; Years Active per Wikipedia</span>
+  </div>
+</div>
+
+<script>
+  var BANDS = [
+    [1, "The Beatles", "1960–1970", [[1960,1970]]],
+    [2, "The Rolling Stones", "1962–present", [[1962,2026]]],
+    [3, "Led Zeppelin", "1968–1980", [[1968,1980]]],
+    [4, "Pink Floyd", "1965–1994, 2005, 2007, 2013–2014, 2022", [[1965,1994],[2005,2005],[2007,2007],[2013,2014],[2022,2022]]],
+    [5, "Queen", "1970–present", [[1970,2026]]],
+    [6, "Fleetwood Mac", "1967–1995, 1997–2022", [[1967,1995],[1997,2022]]],
+    [7, "U2", "1976–present", [[1976,2026]]],
+    [8, "Sly & The Family Stone", "1966–1983", [[1966,1983]]],
+    [9, "Black Sabbath", "1968–2006, 2011–2017, 2025", [[1968,2006],[2011,2017],[2025,2025]]],
+    [10, "Nirvana", "1987–1994", [[1987,1994]]],
+    [11, "The Who", "1964–1983, 1985, 1988–1989, 1991, 1996–present", [[1964,1983],[1985,1985],[1988,1989],[1991,1991],[1996,2026]]],
+    [12, "Metallica", "1981–present", [[1981,2026]]],
+    [13, "AC/DC", "1973–present (hiatus 2016–2018)", [[1973,2016],[2018,2026]]],
+    [14, "Creedence Clearwater Revival", "1959–1972 (reunions: 1974, 1980, 1983)", [[1959,1972],[1974,1974],[1980,1980],[1983,1983]]],
+    [15, "Talking Heads", "1975–1991, 2002", [[1975,1991],[2002,2002]]],
+    [16, "The Grateful Dead", "1965–1995", [[1965,1995]]],
+    [17, "Heart", "1974–1998, 2002–2016, 2019, 2023–present", [[1974,1998],[2002,2016],[2019,2019],[2023,2026]]],
+    [18, "The Clash", "1976–1986", [[1976,1986]]],
+    [19, "The Beach Boys", "1961–present", [[1961,2026]]],
+    [20, "Radiohead", "1985–present", [[1985,2026]]],
+    [21, "Van Halen", "1972–1999, 2003–2020", [[1972,1999],[2003,2020]]],
+    [22, "Rage Against the Machine", "1991–2000, 2007–2011, 2019–2024", [[1991,2000],[2007,2011],[2019,2024]]],
+    [23, "Guns N' Roses", "1985–present", [[1985,2026]]],
+    [24, "The Velvet Underground", "1964–1973, 1990, 1992–1993, 1996", [[1964,1973],[1990,1990],[1992,1993],[1996,1996]]],
+    [25, "Maná", "1986–present", [[1986,2026]]],
+    [26, "Pretenders", "1978–present", [[1978,2026]]],
+    [27, "Parliament/Funkadelic", "1956–present", [[1956,2026]]],
+    [28, "The Allman Brothers Band", "1969–1976, 1978–1982, 1989–2014", [[1969,1976],[1978,1982],[1989,2014]]],
+    [29, "R.E.M.", "1980–2011", [[1980,2011]]],
+    [30, "Pearl Jam", "1990–present", [[1990,2026]]],
+    [31, "Paramore", "2004–2025", [[2004,2025]]],
+    [32, "Aerosmith", "1970–present", [[1970,2026]]],
+    [33, "The White Stripes", "1997–2011", [[1997,2011]]],
+    [34, "Nine Inch Nails", "1988–present", [[1988,2026]]],
+    [35, "Eagles", "1971–1980, 1994–2016, 2017–present", [[1971,1980],[1994,2016],[2017,2026]]],
+    [36, "Ramones", "1974–1996", [[1974,1996]]],
+    [37, "Thin Lizzy", "1969–1983, 1994–2019", [[1969,1983],[1994,2019]]],
+    [38, "Santana", "1966–present", [[1966,2026]]],
+    [39, "Green Day", "1987–present", [[1987,2026]]],
+    [40, "Blondie", "1974–1982, 1997–present", [[1974,1982],[1997,2026]]],
+    [41, "The Band", "1967–1978, 1983–1999", [[1967,1978],[1983,1999]]],
+    [42, "Earth, Wind & Fire", "1969–1984, 1987–present", [[1969,1984],[1987,2026]]],
+    [43, "No Doubt", "1986–2004, 2008–2015, 2024–present", [[1986,2004],[2008,2015],[2024,2026]]],
+    [44, "Cafe Tacvba", "1989–present", [[1989,2026]]],
+    [45, "The Stooges", "1967–1971, 1972–1974, 2003–2016", [[1967,1971],[1972,1974],[2003,2016]]],
+    [46, "Oasis", "1991–2009, 2024–present", [[1991,2009],[2024,2026]]],
+    [47, "Def Leppard", "1976–present", [[1976,2026]]],
+    [48, "Sleater-Kinney", "1994–2006, 2014–present", [[1994,2006],[2014,2026]]],
+    [49, "The Cure", "1976–present", [[1976,2026]]],
+    [50, "Red Hot Chili Peppers", "1982–present", [[1982,2026]]]
+  ];
+
+  var DOMAIN_START = 1950, DOMAIN_END = 2026, CHART_W = 980;
+  var PX_PER_YEAR = CHART_W / (DOMAIN_END - DOMAIN_START);
+  var TIER_TOP = 'var(--tier-top)', TIER_MID = 'var(--tier-mid)', TIER_LOW = 'var(--tier-low)', ERA_COLOR = 'var(--accent)';
+  var DECADE_YEARS = [1950,1960,1970,1980,1990,2000,2010,2020];
+
+  var state = { selectedDecade: null, sortMode: 'rank', selectedRank: null };
+
+  function tierColor(rank) { return rank <= 10 ? TIER_TOP : rank <= 25 ? TIER_MID : TIER_LOW; }
+  function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+  function decadeRange(y) { return { start: y, end: y + 9 }; }
+
+  function computeRows(selDecade) {
+    return BANDS.map(function (b) {
+      var rank = b[0], name = b[1], years = b[2], segs = b[3];
+      var color = tierColor(rank);
+      var isActive = !selDecade;
+      var pieces = [];
+
+      segs.forEach(function (seg) {
+        var s = seg[0], e = seg[1];
+        var left = (s - DOMAIN_START) * PX_PER_YEAR;
+        var width = Math.max((e - s) * PX_PER_YEAR, 3);
+
+        if (!selDecade) {
+          pieces.push({ left: left, width: width, color: color, opacity: 1 });
+          return;
+        }
+
+        var overlapStart = Math.max(s, selDecade.start);
+        var overlapEnd = Math.min(e, selDecade.end);
+
+        if (overlapStart <= overlapEnd) {
+          isActive = true;
+          if (overlapStart > s) pieces.push({ left: left, width: Math.max((overlapStart - s) * PX_PER_YEAR, 3), color: color, opacity: 0.35 });
+          var midLeft = (overlapStart - DOMAIN_START) * PX_PER_YEAR;
+          pieces.push({ left: midLeft, width: Math.max((overlapEnd - overlapStart) * PX_PER_YEAR, 3), color: ERA_COLOR, opacity: 1 });
+          if (overlapEnd < e) pieces.push({ left: (overlapEnd - DOMAIN_START) * PX_PER_YEAR, width: Math.max((e - overlapEnd) * PX_PER_YEAR, 3), color: color, opacity: 0.35 });
+        } else {
+          pieces.push({ left: left, width: width, color: color, opacity: 0.35 });
+        }
+      });
+
+      return { rank: rank, name: name, years: years, debut: segs[0][0], isActive: isActive, pieces: pieces };
+    });
+  }
+
+  function render() {
+    var selDecade = state.selectedDecade ? decadeRange(state.selectedDecade) : null;
+    var rowsRaw = computeRows(selDecade);
+
+    // decade chips
+    var chipsHtml = '<button class="chip" data-action="decade" data-value="" data-active="' + (!state.selectedDecade) + '">All-time</button>';
+    DECADE_YEARS.forEach(function (y) {
+      chipsHtml += '<button class="chip" data-action="decade" data-value="' + y + '" data-active="' + (state.selectedDecade === y) + '">' + y + 's</button>';
+    });
+    document.getElementById('decade-chips').innerHTML = chipsHtml;
+
+    document.querySelectorAll('.seg').forEach(function (btn) {
+      btn.setAttribute('data-active', String(btn.getAttribute('data-value') === state.sortMode));
+    });
+
+    // sorted rows
+    var sorted = rowsRaw.slice().sort(function (a, b) {
+      if (state.sortMode === 'debut') return (a.debut - b.debut) || (a.rank - b.rank);
+      return a.rank - b.rank;
+    });
+
+    // stats scope
+    var scope = selDecade ? rowsRaw.filter(function (r) { return r.isActive; }) : rowsRaw;
+    var byRank = scope.slice().sort(function (a, b) { return a.rank - b.rank; });
+    var top5 = byRank.slice(0, 5);
+    var avg = scope.length ? scope.reduce(function (s, r) { return s + r.rank; }, 0) / scope.length : 0;
+
+    document.getElementById('era-heading').textContent = selDecade ? ('THE ' + state.selectedDecade + 'S') : 'ALL-TIME';
+    document.getElementById('era-legend-item').hidden = !selDecade;
+
+    document.getElementById('stat-tiles').innerHTML =
+      '<div class="tile"><div class="value mono">' + scope.length + '</div><div class="label">' + (scope.length === 1 ? 'band active' : 'bands active') + '</div></div>' +
+      '<div class="tile"><div class="value mono">' + avg.toFixed(1) + '</div><div class="label">avg. rank</div></div>' +
+      '<div class="tile"><div class="value name">' + (top5.length ? '#' + top5[0].rank + '  ' + esc(top5[0].name) : '—') + '</div><div class="label">era mvp</div></div>';
+
+    var reportHtml = '<span class="sort-label">Report card</span>';
+    top5.forEach(function (r) {
+      reportHtml += '<button class="chip" data-action="select" data-value="' + r.rank + '">#' + r.rank + '  ' + esc(r.name) + '</button>';
+    });
+    document.getElementById('report-row').innerHTML = reportHtml;
+
+    var selectedBand = state.selectedRank ? BANDS.filter(function (b) { return b[0] === state.selectedRank; })[0] : null;
+    document.getElementById('inspector-slot').innerHTML = selectedBand
+      ? '<div class="inspector"><div class="info"><span class="rank mono">#' + selectedBand[0] + '</span><span class="name">' + esc(selectedBand[1]) + '</span><span class="years mono">' + selectedBand[2] + '</span></div>' +
+        '<button class="icon-btn" data-action="clear" aria-label="Close"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"></line><line x1="18" y1="6" x2="6" y2="18"></line></svg></button></div>'
+      : '';
+
+    // axis
+    var ticksHtml = '<div class="today-line"><span class="today-label">TODAY</span></div>';
+    DECADE_YEARS.forEach(function (y) {
+      ticksHtml += '<span class="tick" style="left:' + ((y - DOMAIN_START) * PX_PER_YEAR).toFixed(1) + 'px">' + y + '</span>';
+    });
+    document.getElementById('axis-ticks').innerHTML = ticksHtml;
+
+    // rows
+    var rowsHtml = '';
+    sorted.forEach(function (r) {
+      var selected = state.selectedRank === r.rank;
+      var rowStyle = 'opacity:' + (r.isActive ? 1 : 0.35) + ';' + (selected ? 'box-shadow:0 0 0 1px rgba(255,255,255,0.35) inset;border-radius:4px;' : '');
+      var piecesHtml = r.pieces.map(function (p) {
+        return '<div class="piece" style="left:' + p.left.toFixed(1) + 'px;width:' + p.width.toFixed(1) + 'px;background:' + p.color + ';opacity:' + p.opacity + ';"></div>';
+      }).join('');
+      rowsHtml += '<div class="row" data-action="select" data-value="' + r.rank + '" style="' + rowStyle + '">' +
+        '<div class="name-cell">#' + r.rank + '  ' + esc(r.name) + '</div>' +
+        '<div class="track">' + piecesHtml + '</div></div>';
+    });
+    document.getElementById('rows').innerHTML = rowsHtml;
+  }
+
+  document.addEventListener('click', function (e) {
+    var el = e.target.closest('[data-action]');
+    if (!el) return;
+    var action = el.getAttribute('data-action');
+    var value = el.getAttribute('data-value');
+
+    if (action === 'decade') {
+      var y = value ? Number(value) : null;
+      state.selectedDecade = state.selectedDecade === y ? null : y;
+    } else if (action === 'sort') {
+      state.sortMode = value;
+    } else if (action === 'select') {
+      var rank = Number(value);
+      state.selectedRank = state.selectedRank === rank ? null : rank;
+    } else if (action === 'clear') {
+      state.selectedRank = null;
+    }
+    render();
+  });
+
+  render();
+</script>
